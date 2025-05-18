@@ -1,13 +1,13 @@
-# app/main.py
 from fastapi import FastAPI
-from sqlalchemy import Engine
-from app.api.router import router as api_router
-from sqlmodel import SQLModel
 from app.api.auth import router as auth_router
-from app.core.config import engine  
+from app.api.router import router as reports_router
 
-SQLModel.metadata.create_all(engine)
 
-app = FastAPI(title="MedAIV Backend")
-app.include_router(api_router)
-app.include_router(auth_router)  
+def create_app() -> FastAPI:
+    app = FastAPI(title="MedAIV Backend", version="0.1.0")
+    app.include_router(auth_router)
+    app.include_router(reports_router)
+    return app
+
+
+app = create_app()

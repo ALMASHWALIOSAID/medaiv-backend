@@ -1,24 +1,34 @@
+# app/services/ocr.py
+
 import io
+import os
 from typing import List
 from PIL import Image
 import pytesseract
 from pdf2image import convert_from_bytes
 
-# point to tesseract.exe if needed:
-pytesseract.pytesseract.tesseract_cmd = (
-    r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+# Allow configuration via ENV for portability
+TESSERACT_CMD = os.getenv(
+    "TESSERACT_CMD",
+    r"C:\Program Files\Tesseract-OCR\tesseract.exe"  # Windows default
+)
+POPLER_PATH = os.getenv(
+    "POPPLER_PATH",
+    r"C:\Program Files\poppler-24.08.0\Library\bin"  # Windows default
 )
 
-# Poppler bin folder for pdf2image
-POPLER_PATH = r"C:\Program Files\poppler-24.08.0\Library\bin"
+pytesseract.pytesseract.tesseract_cmd = TESSERACT_CMD
 
 def run_ocr_on_image_bytes(img_bytes: bytes) -> str:
     img = Image.open(io.BytesIO(img_bytes))
     return pytesseract.image_to_string(img)
 
 def run_ocr(file_bytes: bytes, content_type: str) -> str:
+    """
+    If PDF: convert each page to an image via pdf2image + Poppler,
+    otherwise run OCR directly on the image bytes.
+    """
     if content_type == "application/pdf":
-        # convert PDF to images using your Poppler installation
         pages = convert_from_bytes(
             file_bytes,
             poppler_path=POPLER_PATH

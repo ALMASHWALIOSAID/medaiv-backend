@@ -1,14 +1,5 @@
-# app/models/schemas.py
-
 from pydantic import BaseModel
 from typing import Optional, Dict, List
-
-class ReportEntities(BaseModel):
-    entities: Dict[str, List[str]]
-
-class OCRResponse(BaseModel):
-    text: str
-    entities: Dict[str, List[str]]
 
 class Token(BaseModel):
     access_token: str
@@ -20,3 +11,22 @@ class TokenData(BaseModel):
 class UserCreate(BaseModel):
     username: str
     password: str
+
+class UserRead(BaseModel):
+    id: int
+    username: str
+    disabled: bool
+
+    class Config:
+        orm_mode = True
+
+class ReportRead(BaseModel):
+    id: int
+    filename: str
+    content_type: str
+    text: str
+    entities: Dict[str, List[str]]
+    owner_id: int
+
+    class Config:
+        orm_mode = True

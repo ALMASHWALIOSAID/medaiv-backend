@@ -1,10 +1,13 @@
-# app/models/user.py
+from typing import List, Optional
+from sqlmodel import SQLModel, Field, Relationship
+from sqlalchemy.orm import Mapped
 
-from typing import Optional
-from sqlmodel import Field, SQLModel
+class UserBase(SQLModel):
+    username: str
 
-class User(SQLModel, table=True):
+class User(UserBase, table=True):
+    __tablename__ = "user"
     id: Optional[int] = Field(default=None, primary_key=True)
-    username: str = Field(nullable=False, index=True, unique=True)
-    hashed_password: str = Field(nullable=False)
+    hashed_password: str
     disabled: bool = Field(default=False)
+    reports: Mapped[List["Report"]] = Relationship(back_populates="owner")  # type: ignore
