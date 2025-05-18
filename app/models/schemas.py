@@ -1,5 +1,8 @@
 from pydantic import BaseModel
 from typing import Optional, Dict, List
+from pydantic import ConfigDict
+
+
 
 class Token(BaseModel):
     access_token: str
@@ -17,8 +20,7 @@ class UserRead(BaseModel):
     username: str
     disabled: bool
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 class ReportRead(BaseModel):
     id: int
@@ -28,5 +30,4 @@ class ReportRead(BaseModel):
     entities: Dict[str, List[str]]
     owner_id: int
 
-    class Config:
-        orm_mode = True
+  
