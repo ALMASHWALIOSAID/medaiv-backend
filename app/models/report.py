@@ -1,17 +1,17 @@
-from datetime import datetime
-from typing import Optional, Dict, List
-from huggingface_hub import User
-from sqlmodel import SQLModel, Field, Relationship
-from sqlalchemy import Column, JSON
-from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import relationship, Mapped
+from sqlalchemy import JSON
+from typing import Optional, TYPE_CHECKING
+from sqlmodel import SQLModel, Field
+
+if TYPE_CHECKING:
+    from app.models.user import User
 
 class Report(SQLModel, table=True):
-    __tablename__ = "report"
-    id: Optional[int] = Field(default=None, primary_key=True)
-    uploaded_at: datetime = Field(default_factory=datetime.utcnow)
+    id: int = Field(default=None, primary_key=True)
     filename: str
     content_type: str
     text: str
-    entities: Dict[str, List[str]] = Field(sa_column=Column(JSON), default_factory=dict)
-    owner_id: Optional[int] = Field(default=None, foreign_key="user.id")
-    owner: Mapped[Optional[User]] = Relationship(back_populates="reports")
+    entities: Optional[dict] = Field(default=None, sa_column=Field(JSON))  # Corrected line
+
+    owner_id: int = Field(default=None, foreign_key="user.id")
+    owner: Mapped[Optional["User"]] = relationship(back_populates="reports")
