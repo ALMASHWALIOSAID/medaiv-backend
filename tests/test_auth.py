@@ -3,7 +3,8 @@ import pytest
 @pytest.mark.asyncio
 async def test_signup_and_login(client):
     # signup
-    resp = await client.post(
+    # signup now lives at /api/auth/signup
+    rresp = await client.post(
         "/api/auth/signup",
         json={"username": "alice", "password": "secret"},
     )
@@ -13,7 +14,8 @@ async def test_signup_and_login(client):
 
     # login
     resp = await client.post(
-        "/api/auth/token",
+        # login is under /api/auth/token
+       "/api/auth/token",
         data={"username": "alice", "password": "secret"},
     )
     assert resp.status_code == 200

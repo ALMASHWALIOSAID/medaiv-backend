@@ -1,25 +1,16 @@
 import pytest
-from io import BytesIO
 import base64
 
-# 1×1 PNG
-PNG_BASE64 = (
-    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGMAAQAABQABDQottAAAAABJ"
-    "RU5ErkJggg=="
-)
+PNG_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg=="
 
 @pytest.mark.asyncio
 async def test_upload_report_flow(client):
-    # Sign up
-    await client.post("/api/auth/signup", json={"username": "bob", "password": "pass123"})
-    # Log in
-    resp = await client.post(
-        "/api/auth/token",
-        data={"username": "bob", "password": "pass123"}
-    )
+    # signup + login (reuse signup URL fix above)
+    await client.post("/api/signup", json={"username": "bob", "password": "pass123"})
+    resp = await client.post("/api/token", data={"username": "bob", "password": "pass123"})
     token = resp.json()["access_token"]
 
-    # Upload
+    # upload
     img_bytes = base64.b64decode(PNG_BASE64)
     files = {"file": ("test.png", img_bytes, "image/png")}
     headers = {"Authorization": f"Bearer {token}"}
@@ -30,7 +21,7 @@ async def test_upload_report_flow(client):
     assert data["content_type"] == "image/png"
     assert data["owner_id"] == 1
 
-    # Health
+    # health
     resp = await client.get("/api/health")
     assert resp.status_code == 200
     assert resp.json() == {"status": "ok"}
