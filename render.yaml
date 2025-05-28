@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: medaiv-backend
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port 10000
+    envVars:
+      - key: DATABASE_URL
+        value: postgresql://medaiv_user:your_database_password@dpg-d0racvje5dus73foke0g-a:5432/medaiv
+      - key: SECRET_KEY
+        value: your_secret_key
+    plan: free
