@@ -13,15 +13,14 @@ from app.models.schemas import TokenData
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token")
 
-
 def authenticate_user(
     session: Session, username: str, password: str
 ) -> Optional[User]:
+    # Authenticate using username instead of email
     user = session.exec(select(User).where(User.username == username)).first()
     if not user or not verify_password(password, user.hashed_password):
         return None
     return user
-
 
 def create_access_token(
     data: dict, expires_delta: Optional[timedelta] = None

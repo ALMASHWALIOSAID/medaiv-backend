@@ -1,28 +1,22 @@
 import pytest
+import uuid
 
 @pytest.mark.asyncio
 async def test_signup_and_login(client):
-    # signup
-    # signup now lives at /api/auth/signup
-    rresp = await client.post(
-        "/api/auth/signup",
-        json={"username": "alice", "password": "secret"},
-    )
-    assert resp.status_code == 201
-    data = resp.json()
-    assert data["username"] == "alice"
+    username = f"user_{uuid.uuid4().hex[:8]}"
+    password = "secret"
 
-    # login
-    resp = await client.post(
-        # login is under /api/auth/token
-       "/api/auth/token",
-        data={"username": "alice", "password": "secret"},
-    )
-    assert resp.status_code == 200
+    # ✅ signup
+    resp = await client.post("/api/auth/signup", json={"username": username, "password": password})
+    assert resp.status_code == 201, resp.text
+
+    # ✅ login
+    resp = await client.post("/api/auth/token", data={"username": username, "password": password})
+    assert resp.status_code == 200, resp.text
     token = resp.json()["access_token"]
 
-    # users/me
+    # ✅ get user info
     headers = {"Authorization": f"Bearer {token}"}
     resp = await client.get("/api/auth/users/me", headers=headers)
     assert resp.status_code == 200
-    assert resp.json()["username"] == "alice"
+    assert resp.json()["username"] == username

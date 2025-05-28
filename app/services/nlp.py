@@ -1,43 +1,56 @@
-# app/services/nlp.py
-
-import os
 from typing import Dict, List
-
-import spacy
 from transformers import pipeline
+from transformers import logging
+import spacy
 
-# spaCy singleton
-SPACY_MODEL = os.getenv("SPACY_MODEL", "en_core_web_sm")
-_spacy_nlp = spacy.load(SPACY_MODEL)
+# Suppress HF warnings
+logging.set_verbosity_error()
 
-# Hugging-Face NER pipeline
-HF_NER_MODEL = os.getenv("HF_NER_MODEL", "d4data/biomedical-ner-all")
+# Load SciSpaCy model
+spacy_model = spacy.load("en_ner_bionlp13cg_md")
+
+# Initialize HuggingFace NER pipeline
 _ner_pipeline = pipeline(
     "ner",
-    model=HF_NER_MODEL,
+    model="dbmdz/bert-large-cased-finetuned-conll03-english",
     aggregation_strategy="simple"
 )
 
-def extract_entities_spacy(text: str) -> Dict[str, List[str]]:
-    doc = _spacy_nlp(text)
-    out: Dict[str, List[str]] = {}
-    for ent in doc.ents:
-        out.setdefault(ent.label_, []).append(ent.text)
-    return out
 
 def extract_entities_transformer(text: str) -> Dict[str, List[str]]:
+    """
+    Extract entities using HuggingFace transformer-based model.
+    Groups words by entity labels.
+    """
     raw_ents = _ner_pipeline(text)
     out: Dict[str, List[str]] = {}
     for ent in raw_ents:
-        label = ent.get("entity_group", ent["entity"])
-        span  = ent["word"]
-        out.setdefault(label, []).append(span)
+        label = ent.get("entity_group") or ent.get("entity") or ent.get("label")
+        word = ent.get("word") or ent.get("entity") or ""
+        out.setdefault(label, []).append(word)
     return out
+
 
 def extract_entities(text: str, method: str = "transformer") -> Dict[str, List[str]]:
     """
-    method: "transformer" (default) or "spacy"
+    General entity extraction dispatcher.
+    Uses either transformer-based or SciSpaCy-based model.
     """
-    if method.lower() == "spacy":
-        return extract_entities_spacy(text)
-    return extract_entities_transformer(text)
+    if method == "transformer":
+        try:
+            return extract_entities_transformer(text)
+        except Exception as e:
+            print(f"[Transformer Entity Extraction Error] {e}")
+            return {}
+    elif method == "spacy":
+        try:
+            doc = spacy_model(text)
+            entities: Dict[str, List[str]] = {}
+            for ent in doc.ents:
+                entities.setdefault(ent.label_, []).append(ent.text)
+            return entities
+        except Exception as e:
+            print(f"[SpaCy Entity Extraction Error] {e}")
+            return {}
+    else:
+        raise ValueError(f"Unknown method: {method}")

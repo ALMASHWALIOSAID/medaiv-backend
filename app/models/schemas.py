@@ -1,7 +1,8 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, Dict, List
 from pydantic import ConfigDict
-
+from sqlmodel import SQLModel
+from typing import Union
 
 
 class Token(BaseModel):
@@ -9,7 +10,7 @@ class Token(BaseModel):
     token_type: str
 
 class TokenData(BaseModel):
-    username: Optional[str] = None
+    username: str | None = None
 
 class UserCreate(BaseModel):
     username: str
@@ -22,12 +23,11 @@ class UserRead(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-class ReportRead(BaseModel):
+class ReportRead(SQLModel):
     id: int
     filename: str
     content_type: str
     text: str
     entities: Dict[str, List[str]]
     owner_id: int
-
   

@@ -1,11 +1,14 @@
-from sqlalchemy.orm import relationship, Mapped
-from typing import List
-from sqlmodel import SQLModel, Field
+# app/models/user.py
+from typing import List, Optional, TYPE_CHECKING
+from sqlmodel import SQLModel, Field, Relationship
+
+if TYPE_CHECKING:
+    from app.models.report import Report
 
 class User(SQLModel, table=True):
-    id: int = Field(default=None, primary_key=True)
-    username: str
+    id: Optional[int] = Field(default=None, primary_key=True)
+    username: str = Field(index=True, unique=True)
     hashed_password: str
     disabled: bool = False
 
-    reports: Mapped[List["Report"]] = relationship(back_populates="owner")
+    reports: List["Report"] = Relationship(back_populates="owner")

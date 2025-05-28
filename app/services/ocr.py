@@ -1,43 +1,29 @@
 # app/services/ocr.py
 
 import io
-import os
-from typing import List
+from typing import Union
+
 from PIL import Image
 import pytesseract
-from pdf2image import convert_from_bytes
+from PyPDF2 import PdfReader
+import csv
 
-# Allow configuration via ENV for portability
-TESSERACT_CMD = os.getenv(
-    "TESSERACT_CMD",
-    r"C:\Program Files\Tesseract-OCR\tesseract.exe"  # Windows default
-)
-POPLER_PATH = os.getenv(
-    "POPPLER_PATH",
-    r"C:\Program Files\poppler-24.08.0\Library\bin"  # Windows default
-)
+def run_ocr(contents: bytes, content_type: str) -> str:
+    if content_type == "text/plain":
+        return contents.decode("utf-8", errors="ignore")
 
-pytesseract.pytesseract.tesseract_cmd = TESSERACT_CMD
+    if content_type == "text/csv":
+        decoded = contents.decode("utf-8", errors="ignore").splitlines()
+        reader = csv.reader(decoded)
+        return "\n".join([", ".join(row) for row in reader])
 
-def run_ocr_on_image_bytes(img_bytes: bytes) -> str:
-    img = Image.open(io.BytesIO(img_bytes))
-    return pytesseract.image_to_string(img)
-
-def run_ocr(file_bytes: bytes, content_type: str) -> str:
-    """
-    If PDF: convert each page to an image via pdf2image + Poppler,
-    otherwise run OCR directly on the image bytes.
-    """
     if content_type == "application/pdf":
-        pages = convert_from_bytes(
-            file_bytes,
-            poppler_path=POPLER_PATH
-        )
-        texts: List[str] = []
-        for page in pages:
-            buf = io.BytesIO()
-            page.save(buf, format="PNG")
-            texts.append(pytesseract.image_to_string(Image.open(buf)))
-        return "\n\n---PAGE BREAK---\n\n".join(texts)
-    else:
-        return run_ocr_on_image_bytes(file_bytes)
+        reader = PdfReader(io.BytesIO(contents))
+        text_pages = [page.extract_text() or "" for page in reader.pages]
+        return "\n".join(text_pages)
+
+    if content_type in ("image/png", "image/jpeg"):
+        img = Image.open(io.BytesIO(contents))
+        return pytesseract.image_to_string(img)
+
+    raise RuntimeError(f"Unhandled content type: {content_type}")

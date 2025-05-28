@@ -1,26 +1,35 @@
 import os
 import sys
 
-# ensure the project root is on sys.path so "import app" works
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
-import pytest
+from fastapi.testclient import TestClient
+from sqlmodel import SQLModel, create_engine, Session
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
-from sqlmodel import SQLModel
-from app.core.db import engine
 from app.main import app
 
-# automatically create/drop the DB schema once per test session
-@pytest.fixture(scope="module", autouse=True)
-def prepare_db():
-    SQLModel.metadata.create_all(engine)
-    yield
-    SQLModel.metadata.drop_all(engine)
-
-# async client against your FastAPI app in-memory
 @pytest_asyncio.fixture
 async def client():
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as c:
-        yield c
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        yield ac
+
+
+# Ensure 'app' module can be found
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+
+from app.core.db import get_session  # Replace with correct path to your dependency override
+
+DATABASE_URL = "sqlite:///./test.db"
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+
+def override_get_session():
+    with Session(engine) as session:
+        yield session
+
+app.dependency_overrides[get_session] = override_get_session
+
+# Create tables once before tests
+SQLModel.metadata.create_all(engine)
+
+

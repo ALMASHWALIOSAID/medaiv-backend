@@ -1,21 +1,24 @@
+# app/core/config.py
+
 import os
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from functools import lru_cache
+from pydantic import BaseSettings
 
 class Settings(BaseSettings):
-    """
-    Application settings loaded from environment variables or .env file.
-    """
-    SECRET_KEY: str = os.getenv("SECRET_KEY", "changeme-supersecret")
-    ALGORITHM: str = os.getenv("ALGORITHM", "HS256")
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./medaiv.db")
-    SQLALCHEMY_ECHO: bool = os.getenv("SQLALCHEMY_ECHO", "false").lower() in ("true", "1", "yes")
-    OCR_LANG: str = os.getenv("OCR_LANG", "eng")
-    MODEL_NAME: str = os.getenv("SPACY_MODEL", "en_core_web_sm")
+    # your required settings
+    DATABASE_URL: str = "sqlite:///./test.db"
+    SQLALCHEMY_ECHO: bool = False
+    SECRET_KEY: str = "changeme"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    ALGORITHM: str = "HS256"
 
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-    )
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
 
-settings = Settings()
+@lru_cache()
+def get_settings() -> Settings:
+    return Settings()
+
+# convenient module‐level singleton
+settings = get_settings()
